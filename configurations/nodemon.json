@@ -1,0 +1,11 @@
+{
+    "cwd": "./../",
+    "colours": true,
+    "delay": 1000,
+    "verbose": false,
+    "ignore": ["**/__tests__/**/*"],
+    "env": { "NODE_ENV": "development" },
+    "ext": "js,json",
+    "exec": "node",
+    "watch": ["./sources/**/*"]
+}

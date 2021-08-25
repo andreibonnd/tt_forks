@@ -1,0 +1,7 @@
+# Service
+node_modules
+.git
+
+# Sensitive
+ssl
+.env

@@ -1,0 +1,48 @@
+{
+    "name": "backend",
+    "version": "1.0.0",
+    "description": "Fork collecting service backend",
+    "author": "Andrei <andrei.bonnd@gmail.com",
+    "license": "Apache License - Version 2.0",
+    "private": true,
+    "type": "module",
+    "engines": {
+        "node": ">=14.5.0"
+    },
+    "scripts": {
+        "start": "node ./sources/server.js",
+        "develop": "nodemon --config ./configurations/nodemon.json ./sources/server.js",
+        "db.drop": "node ./scripts/db/drop.js",
+        "db.structure": "node ./scripts/db/structure.js",
+        "db.refresh": "npm run db.drop && npm run db.structure",
+        "tests.db": "npm run db.refresh && node ./scripts/db/tests/fill.js",
+        "tests.integration": "ava --config ./ava.integration.js",
+        "tests": "npm run db.refresh && npm run tests.db && npm run tests.integration"
+    },
+    "devDependencies": {
+        "@types/node": "^16.3.1",
+        "ava": "4.0.0-alpha.2",
+        "faker": "^5.5.3",
+        "node-fetch": "^2.6.1",
+        "nodemon": "^2.0.6",
+        "prettier": "^2.1.2"
+    },
+    "dependencies": {
+        "@koa/cors": "^3.1.0",
+        "@koa/router": "^10.0.0",
+        "amqplib": "^0.8.0",
+        "dotenv-defaults": "^2.0.1",
+        "joi": "^17.4.1",
+        "jsonwebtoken": "^8.5.1",
+        "knex": "^0.95.4",
+        "koa": "^2.13.0",
+        "koa-bodyparser": "^4.3.0",
+        "nodemailer": "^6.6.3",
+        "pg": "^8.6.0",
+        "uuid": ">=8.3.1",
+        "winston": ">=3.3.3"
+    },
+    "contributors": [
+        "Andrei <andrei.bonnd@gmail.com>"
+    ]
+}

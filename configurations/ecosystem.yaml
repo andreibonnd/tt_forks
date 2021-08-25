@@ -1,0 +1,21 @@
+apps:
+    - script: /var/server/backend/sources/server.js
+      cwd: /var/server/backend
+      name: 'backend'
+      watch: true
+      autorestart: true
+      max_restarts: 10
+      restart_delay: 4000
+      max_memory_restart: '1G'
+      # instances: 3
+      # exec_mode: fork | cluster
+      env:
+          NODE_ENV: development
+      env_:
+          NODE_ENV: development
+      env_production:
+          NODE_ENV: production
+      log_date_format: YYYY-MM-DD HH:mm
+      error_file: /var/server/logs/error.log
+      out_file: /var/server/logs/output.log
+      merge_logs: true

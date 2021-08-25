@@ -1,0 +1,624 @@
+openapi: 3.0.3
+info:
+    version: 1.0.0
+    title: Backend
+    description: >
+        Fork collecting service backend
+    contact:
+        email: andrei.bonnd@gmail.com
+    license:
+        name: Apache 2.0
+        url: https://www.apache.org/licenses/LICENSE-2.0.txt
+servers:
+    - url: http://localhost:3200/api
+      description: Local (test data)
+    - url: http://localhost:3200/api
+      description: Sandbox (test data)
+    - url: http://localhost:3200/api
+      description: Production (live data)
+tags:
+    - name: __new__
+    - name: __updated__
+    - name: users
+    - name: forks
+    - name: maintenance
+paths:
+    /users/registration:
+        post:
+            tags:
+                - users
+            summary: New User Registration
+            security: []
+            requestBody:
+                required: true
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/user.request'
+                            required:
+                                - login
+                                - email
+            responses:
+                '200':
+                    description: 'OK'
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/user.response'
+                    headers:
+                        authorization:
+                            schema:
+                                type: string
+                            description: JWT access token
+                        x-refresh-token:
+                            schema:
+                                type: string
+                            description: JWT refresh token
+                '400':
+                    $ref: '#/components/responses/_400'
+                '409':
+                    $ref: '#/components/responses/_409'
+                '500':
+                    $ref: '#/components/responses/_500'
+    /users/authentication:
+        post:
+            tags:
+                - users
+            summary: User authentication
+            security: []
+            requestBody:
+                required: true
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/user.request'
+            responses:
+                '200':
+                    description: 'OK'
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/user.response'
+                    headers:
+                        authorization:
+                            schema:
+                                type: string
+                            description: JWT access token
+                        x-refresh-token:
+                            schema:
+                                type: string
+                            description: JWT refresh token
+                '400':
+                    $ref: '#/components/responses/_400'
+                '402':
+                    $ref: '#/components/responses/_402'
+                '404':
+                    $ref: '#/components/responses/_404'
+                '500':
+                    $ref: '#/components/responses/_500'
+
+    /forks:
+        post:
+            tags:
+                - forks
+            summary: Add a new fork
+            description: >
+                Adding a new fork (if a category is specified) will trigger a "fork-added" event that will send an email to all subscribers of this category
+            security:
+                - bearerAuthorization: []
+            requestBody:
+                required: true
+                content:
+                    application/json:
+                        schema:
+                            type: object
+                            properties:
+                                name:
+                                    type: string
+                                    minLength: 2
+                                    maxLength: 32
+                                description:
+                                    type: string
+                                    minLength: 2
+                                    maxLength: 512
+                                creation_year:
+                                    type: integer
+                                    minimum: -10000
+                                    maximum: 10000
+                                category_id:
+                                    type: string
+                                    format: uuid
+                            required:
+                                - name
+                                - description
+                                - creation_year
+            responses:
+                '200':
+                    $ref: '#/components/responses/200.OK'
+                '400':
+                    $ref: '#/components/responses/_400'
+                '401':
+                    $ref: '#/components/responses/_401'
+                '500':
+                    $ref: '#/components/responses/_500'
+        get:
+            tags:
+                - forks
+            summary: Get all forks with pagination
+            security:
+                - bearerAuthorization: []
+            parameters:
+                - in: query
+                  name: limit
+                  required: true
+                  schema:
+                      type: integer
+                      minimum: 1
+                      maximum: 100
+                  description: Number of forks per page
+                - in: query
+                  name: offset
+                  required: true
+                  schema:
+                      type: integer
+                      minimum: 0
+                  description: Offset from start
+            responses:
+                '200':
+                    description: 'OK'
+                    content:
+                        application/json:
+                            schema:
+                                type: array
+                                items:
+                                    $ref: '#/components/schemas/fork.response'
+                '400':
+                    $ref: '#/components/responses/_400'
+                '401':
+                    $ref: '#/components/responses/_401'
+                '404':
+                    $ref: '#/components/responses/_404'
+                '500':
+                    $ref: '#/components/responses/_500'
+    /forks/{id}:
+        get:
+            tags:
+                - forks
+            summary: Get a fork by its ID
+            security:
+                - bearerAuthorization: []
+            parameters:
+                - in: path
+                  name: id
+                  required: true
+                  schema:
+                      $ref: '#/components/schemas/_uuid'
+                  description: Fork ID in the database
+            responses:
+                '200':
+                    description: 'OK'
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/fork.response'
+                '400':
+                    $ref: '#/components/responses/_400'
+                '401':
+                    $ref: '#/components/responses/_401'
+                '404':
+                    $ref: '#/components/responses/_404'
+                '500':
+                    $ref: '#/components/responses/_500'
+        delete:
+            tags:
+                - forks
+            summary: Delete a fork by its ID
+            security:
+                - bearerAuthorization: []
+            parameters:
+                - in: path
+                  name: id
+                  required: true
+                  schema:
+                      $ref: '#/components/schemas/_uuid'
+                  description: Fork ID in the database
+            responses:
+                '200':
+                    $ref: '#/components/responses/200.OK'
+                '400':
+                    $ref: '#/components/responses/_400'
+                '401':
+                    $ref: '#/components/responses/_401'
+                '402':
+                    $ref: '#/components/responses/_402'
+                '500':
+                    $ref: '#/components/responses/_500'
+    /forks/categories/all:
+        get:
+            tags:
+                - forks
+            summary: Get a list of categories with pagination
+            security:
+                - bearerAuthorization: []
+            parameters:
+                - in: query
+                  name: limit
+                  required: true
+                  schema:
+                      type: integer
+                      minimum: 1
+                      maximum: 100
+                  description: Number of forks per page
+                - in: query
+                  name: offset
+                  required: true
+                  schema:
+                      type: integer
+                      minimum: 0
+                  description: Offset from start
+            responses:
+                '200':
+                    description: 'OK'
+                    content:
+                        application/json:
+                            schema:
+                                type: array
+                                items:
+                                    $ref: '#/components/schemas/category.response'
+                '400':
+                    $ref: '#/components/responses/_400'
+                '401':
+                    $ref: '#/components/responses/_401'
+                '404':
+                    $ref: '#/components/responses/_404'
+                '500':
+                    $ref: '#/components/responses/_500'
+    /forks/categories/{id}:
+        get:
+            tags:
+                - forks
+            summary: Get all forks in category with pagination
+            security:
+                - bearerAuthorization: []
+            parameters:
+                - in: path
+                  name: id
+                  required: true
+                  schema:
+                      $ref: '#/components/schemas/_uuid'
+                  description: Category ID in the database
+                - in: query
+                  name: limit
+                  required: true
+                  schema:
+                      type: integer
+                      minimum: 1
+                      maximum: 100
+                  description: Number of forks per page
+                - in: query
+                  name: offset
+                  required: true
+                  schema:
+                      type: integer
+                      minimum: 0
+                  description: Offset from start
+            responses:
+                '200':
+                    description: 'OK'
+                    content:
+                        application/json:
+                            schema:
+                                type: array
+                                items:
+                                    $ref: '#/components/schemas/fork.response'
+                '400':
+                    $ref: '#/components/responses/_400'
+                '401':
+                    $ref: '#/components/responses/_401'
+                '404':
+                    $ref: '#/components/responses/_404'
+                '500':
+                    $ref: '#/components/responses/_500'
+    /forks/user/{login}:
+        get:
+            tags:
+                - forks
+            summary: Get all forks added by user with pagination
+            security:
+                - bearerAuthorization: []
+            parameters:
+                - in: path
+                  name: login
+                  required: true
+                  schema:
+                      $ref: '#/components/schemas/_uuid'
+                  description: User login in the database
+                - in: query
+                  name: limit
+                  required: true
+                  schema:
+                      type: integer
+                      minimum: 1
+                      maximum: 100
+                  description: Number of forks per page
+                - in: query
+                  name: offset
+                  required: true
+                  schema:
+                      type: integer
+                      minimum: 0
+                  description: Offset from start
+            responses:
+                '200':
+                    description: 'OK'
+                    content:
+                        application/json:
+                            schema:
+                                type: array
+                                items:
+                                    $ref: '#/components/schemas/fork.response'
+                '400':
+                    $ref: '#/components/responses/_400'
+                '401':
+                    $ref: '#/components/responses/_401'
+                '404':
+                    $ref: '#/components/responses/_404'
+                '500':
+                    $ref: '#/components/responses/_500'
+    /forks/subscribe/category/{id}:
+        patch:
+            tags:
+                - forks
+            summary: Subscribe to a category
+            description: >
+                Subscribe to receive an email when new forks are added to a category
+            security: []
+            parameters:
+                - in: path
+                  name: id
+                  required: true
+                  schema:
+                      $ref: '#/components/schemas/_uuid'
+                  description: Category ID in the database
+            responses:
+                '200':
+                    $ref: '#/components/responses/200.OK'
+                '400':
+                    $ref: '#/components/responses/_400'
+                '401':
+                    $ref: '#/components/responses/_401'
+                '500':
+                    $ref: '#/components/responses/_500'
+    /forks/unsubscribe/category/{id}:
+        patch:
+            tags:
+                - forks
+            summary: Unsubscribe from a category
+            security:
+                - bearerAuthorization: []
+            parameters:
+                - in: path
+                  name: id
+                  required: true
+                  schema:
+                      $ref: '#/components/schemas/_uuid'
+                  description: Category ID in the database
+            responses:
+                '200':
+                    $ref: '#/components/responses/200.OK'
+                '400':
+                    $ref: '#/components/responses/_400'
+                '401':
+                    $ref: '#/components/responses/_401'
+                '500':
+                    $ref: '#/components/responses/_500'
+
+    /maintenance/status:
+        get:
+            tags:
+                - maintenance
+            summary: Checking service health by requesting status
+            responses:
+                '200':
+                    $ref: '#/components/responses/200.OK'
+                '500':
+                    $ref: '#/components/responses/_500'
+    /maintenance/refresh-token:
+        patch:
+            tags:
+                - maintenance
+            summary: Refresh the access token
+            security:
+                - bearerAuthorization: []
+                - refreshHeader: []
+            responses:
+                '200':
+                    description: 'OK'
+                    headers:
+                        authorization:
+                            schema:
+                                type: string
+                            description: New JWT access token
+                        x-refresh-token:
+                            schema:
+                                type: string
+                            description: New JWT refresh token
+                '401':
+                    $ref: '#/components/responses/_401'
+                '500':
+                    $ref: '#/components/responses/_500'
+    /maintenance/revoke-token:
+        patch:
+            tags:
+                - maintenance
+            summary: Revokes the refresh token
+            security:
+                - bearerAuthorization: []
+                - refreshHeader: []
+            responses:
+                '200':
+                    $ref: '#/components/responses/200.OK'
+                '401':
+                    $ref: '#/components/responses/_401'
+                '500':
+                    $ref: '#/components/responses/_500'
+components:
+    responses:
+        200.OK:
+            description: 'OK'
+            content:
+                text/plain:
+                    schema:
+                        type: string
+                        example: 'OK'
+        _400:
+            description: 'Bad Request (validation exception)'
+            content:
+                'application/json':
+                    schema:
+                        $ref: '#/components/schemas/_error.simple'
+        _401:
+            description: 'Unauthorized'
+            content:
+                'application/json':
+                    schema:
+                        $ref: '#/components/schemas/_error.simple'
+        _402:
+            description: 'Request failed'
+            content:
+                'application/json':
+                    schema:
+                        $ref: '#/components/schemas/_error.full'
+        _403:
+            description: 'Forbidden'
+            content:
+                'application/json':
+                    schema:
+                        $ref: '#/components/schemas/_error.simple'
+        _404:
+            description: 'Not Found'
+            content:
+                'application/json':
+                    schema:
+                        $ref: '#/components/schemas/_error.simple'
+        _409:
+            description: 'Conflict'
+            content:
+                'application/json':
+                    schema:
+                        $ref: '#/components/schemas/_error.simple'
+        _500:
+            description: 'Internal Server Error'
+            content:
+                'application/json':
+                    schema:
+                        $ref: '#/components/schemas/_error.full'
+    schemas:
+        _uuid:
+            description: 'UUID v4 identifier'
+            type: string
+            format: uuid
+        _error.simple:
+            description: 'Message from the service'
+            type: string
+        _error.full:
+            type: object
+            properties:
+                message:
+                    $ref: '#/components/schemas/_error.simple'
+                uuid:
+                    $ref: '#/components/schemas/_uuid'
+        login:
+            type: string
+            minLength: 2
+            maxLength: 32
+        email:
+            type: string
+            format: email
+            maxLength: 128
+        password:
+            type: string
+            minLength: 2
+            maxLength: 64
+        user.request:
+            type: object
+            properties:
+                login:
+                    $ref: '#/components/schemas/login'
+                email:
+                    $ref: '#/components/schemas/email'
+                password:
+                    $ref: '#/components/schemas/password'
+            required:
+                - password
+        user.response:
+            type: object
+            properties:
+                login:
+                    $ref: '#/components/schemas/login'
+                email:
+                    $ref: '#/components/schemas/email'
+                subscriptions:
+                    type: array
+                    items:
+                        type: object
+                        properties:
+                            id:
+                                type: string
+                                format: uuid
+                            name:
+                                type: string
+            required:
+                - login
+                - email
+                - subscriptions
+        category.response:
+            type: object
+            properties:
+                id:
+                    $ref: '#/components/schemas/_uuid'
+                name:
+                    type: string
+                    maxLength: 32
+                description:
+                    type: string
+                    maxLength: 512
+        fork.response:
+            type: object
+            properties:
+                id:
+                    $ref: '#/components/schemas/_uuid'
+                name:
+                    type: string
+                    maxLength: 32
+                description:
+                    type: string
+                    maxLength: 512
+                creation_year:
+                    type: integer
+                    minimum: -10000
+                    maximum: 10000
+                creator:
+                    type: object
+                    properties:
+                        id:
+                            $ref: '#/components/schemas/_uuid'
+                        login:
+                            $ref: '#/components/schemas/login'
+                category:
+                    $ref: '#/components/schemas/category.response'
+            required:
+                - id
+                - name
+                - description
+                - creation_year
+                - creator
+    securitySchemes:
+        bearerAuthorization:
+            type: http
+            scheme: bearer
+            bearerFormat: JWT
+        refreshHeader:
+            type: apiKey
+            in: header
+            name: x-refresh-token
